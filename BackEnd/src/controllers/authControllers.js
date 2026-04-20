@@ -1,40 +1,35 @@
-const user = require('../models/user');//importacion del modelo de datos para el usuario
-const career = require('../models/careers');//importacion del modelo de datos para las carreras
-const bcrypt = require('bcryptjs'); //importacion de bcryptjs para hashear contraseñas
-const jwt = require('jsonwebtoken'); //importacion de jsonwebtoken para crear tokens
+const bcrypt = require('bcrypt');//importacion de bcrypt para encriptar las contraseñas
+const jwt = require('jsonwebtoken');//importacion de jsonwebtoken para generar tokens
+const User = require('../models/user');//importacion del modelo de datos para el usuario
 
 exports.register=async(req,res)=>{
     try {
-        const {email,password,name,lastname}=req.body;
+        const {email,password,name,lastname,nombre,carrera,anio,materias}=req.body;//obtencion de los datos del usuario desde el cuerpo de la solicitud
 
-        if(!email || !password || !name) {
-            return res.status(400).json({ message: 'Email, contraseña y nombre son requeridos' });
-        }
-
-        const userExists=await user.findOne({email});
+        const userExists=await User.findOne({email});//verificacion de si el usuario ya existe en la base de datos
 
         if(userExists){
-            return res.status(400).json({message:'El email ya está registrado'});
+            return res.status(400).json({message:'El usuario ya existe'});
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword=await bcrypt.hash(password,10);//encriptacion de la contraseña del usuario
 
-        const newUser=new user({
+        const newUser=new User({
             email,
             password: hashedPassword,
-            nombre: `${name} ${lastname || ''}`.trim(),
-            carrera: null,
-            anio: null,
-            materias: []
+            nombre: nombre || name,
+            carrera,
+            anio: anio ? Number(anio) : undefined,
+            materias
         });
 
-        await newUser.save();
+        await newUser.save();//guardado del usuario en la base de datos
 
         newUser.password=undefined;//eliminacion de la contraseña del usuario para no enviarla en la respuesta
 
         res.status(201).json({
             message:"usuario registrado exitosamente",
-            user: newUser
+            newUser
         });
 
     } catch (error) {
@@ -46,40 +41,31 @@ exports.register=async(req,res)=>{
 //Login de usuario
 exports.login=async(req,res)=>{
     try{
-        const {email,password}=req.body;//obtencion de los datos del usuario desde el cuerpo de la solicitud
+        const {email,password}=req.body;
 
-        //Validar que email y password no estén vacíos
-        if(!email || !password){
-            return res.status(400).json({message:'Email y contraseña son requeridos'});
+        const foundUser=await User.findOne({email}).populate('carrera');
+
+        if(!foundUser){
+            return res.status(400).json({message:'El usuario no existe'});
         }
 
-        const loginUser=await user.findOne({email}).populate('carrera');//busca el usuario
-
-        if(!loginUser){
-            //Mensaje genérico para evitar enumeración de usuarios
-            return res.status(401).json({message:'Credenciales inválidas'});
+        const passwordMatch=await bcrypt.compare(password,foundUser.password);
+        if(!passwordMatch){
+            return res.status(400).json({message:'Contraseña incorrecta'});
         }
 
-        //Comparar la contraseña hasheada
-        const validPassword = await bcrypt.compare(password, loginUser.password);
-        if(!validPassword){
-            //Mensaje genérico
-            return res.status(401).json({message:'Credenciales inválidas'});
-        }
-
-        //Generar token JWT
         const token = jwt.sign(
-            { userId: loginUser._id, email: loginUser.email },
-            process.env.JWT_SECRET || 'tu_clave_secreta_super_segura_2024', //cambiar en producción
-            { expiresIn: '24h' }
+            { userId: foundUser._id, email: foundUser.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
         );
 
-        loginUser.password=undefined;//eliminacion de la contraseña del usuario 
+        foundUser.password=undefined;
 
         res.json({
             message:"Inicio de sesion exitoso",
-            token: token,
-            user: loginUser
+            token,
+            user: foundUser
         });
 
         
@@ -89,3 +75,17 @@ exports.login=async(req,res)=>{
 
     }
 };
+
+exports.getProfile=async(req,res)=>{
+    try{
+        const user=await User.findById(req.userId).populate('carrera').select('-password');
+        if(!user){
+            return res.status(404).json({message:'Usuario no encontrado'});
+        };
+
+        res.json({user});
+    }
+    catch (error) {
+        res.status(500).json({message:"Error al obtener el perfil del usuario", error});
+    }
+} 

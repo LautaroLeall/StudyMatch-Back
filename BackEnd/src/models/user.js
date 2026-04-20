@@ -21,17 +21,30 @@ const userSchema=new mongoose.Schema({ //creacion del esquema de datos para el u
     carrera:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Carrera',
-        required: false,
-        default: null
+        required: true
     },
 
     anio:{
         type:Number,
-        required: false,
-        default: null
+        required:true,
     },
 
-    materias: [String],
+    materias: [{
+        nombre: String,
+        estado: {
+            type: String,
+            enum: ['aprobada', 'cursando', 'pendiente' ,'recursando', 'no cursada'],
+        },
+        esAyudante: {
+        type: Boolean,
+        default: false
+        },
+        nivel:{
+            type: String,
+            enum: ["basico", "intermedio", "avanzado"]
+        }
+            
+    }],
     createdAt: {
         type: Date,
         default: Date.now

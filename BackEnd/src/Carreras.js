@@ -1,21 +1,22 @@
 require('dotenv').config();//Carga variables
 
 const mongoose=require('mongoose');
-const Carrera=require('./models/careers'); //importa el modelo de carreras
+const careers=require('./models/careers'); //importa el modelo de carreras
 
-//Función async para ejecutar el seed
-async function seedCareers(){
-  try {
-    // Conexión a MongoDB
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Conectado a MongoDB');
+// Conexión a MongoDB
+mongoose.connect(process.env.MONGO_URI,{
+    useNewParser:true,
+    useUnifiedTopology:true
+})
+.then(()=>console.log('Conectado a MongoDB')) //mensaje de conexion exitosa
+.catch((err)=>console.error('Error al conectar a MongoDB:',err)); //mensaje de error
 
-    // Eliminar carreras existentes
-    await Carrera.deleteMany(); 
-    console.log('🗑️  Carreras eliminadas');
 
-    // Crear nuevas carreras
-    const careerData = [{
+await Careers.deleteMany(); // Elimina todas las carreras existentes
+console.log('Carreras eliminadas');
+
+// Crear nuevas carreras
+const careersData = [{
   nombre: 'Tec. Calidad y Desarrollo de Software',
 
   anios: [
@@ -95,8 +96,7 @@ async function seedCareers(){
             {nombre:"Química General", codigo: "I207"},
             {nombre:"Taller II", codigo: "I208"},
             {nombre:"Física III", codigo: "I209"},
-            {nombre:"Matemática IV", codigo: "I210"},
-
+            {nombre:"Matemática IV", codigo: "I210"}
           ]
        },
 
@@ -153,30 +153,18 @@ async function seedCareers(){
        }
       ]
     }
-    ];
+];
 
-    // Insertar carreras en la BD
-    const resultado = await Carrera.insertMany(careerData);
-    console.log(`✅ ${resultado.length} carreras insertadas`);
+//insertar
+const resultado=await careers.insertMany(careersData);//inserta carreras
+console.log(`✅ ${resultado.length} carreras insertadas`)//mensaje 
 
-    // Mostrar carreras insertadas
-    console.log('\n📚 Carreras insertadas:');
-    resultado.forEach((carrera, index) => {
-      console.log(`${index + 1}. ${carrera.nombre}`);
-    });
+//mostrar
+console.log('\n Carreras insertadas:');
 
-    await mongoose.connection.close();
-    console.log('\n✅ Conexión cerrada');
-    process.exit(0);
+resultado.forEach((carrera,index)=>{
+  console.log(`${index+1}. ${carrera.nombre}`); //muestra las carreras insertadas
+});
 
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    process.exit(1);
-  }
-}
-
-// Ejecutar el seed si este archivo se llama directamente
-if (require.main === module) {
-  seedCareers();
-}
+process.exit(0);
  
