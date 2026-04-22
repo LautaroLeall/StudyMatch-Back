@@ -1,12 +1,11 @@
-const { json } = require('express');
-const careers = require('../models/careers');//importacion del modelo de datos para las carreras
+const Career = require('../models/careers');//importacion del modelo de datos para las carreras
 
 //Se obtiene la lista de todas las carreras
 
-exports.getAllcareers = async (req, res) => {
+exports.getAllcareer = async (req, res) => {
     try {
-        const allCareers = await careers.find();//busqueda de todas las carreras en la base de datos
-        res.json(allCareers);
+        const careers = await Career.find();
+        res.json(careers);
     }
     catch (error) {
         res.status(500).json({
@@ -18,9 +17,9 @@ exports.getAllcareers = async (req, res) => {
 
 //carrera id 
 
-exports.getcarrersById = async (req, res) => {
+exports.getcarrerById = async (req, res) => {
     try {
-        const career = await careers.findById(req.params.id);
+        const career = await Career.findById(req.params.id);
         if (!career) {
             return res.status(404).json({
                 error: "Carrera no encontrada"
@@ -43,9 +42,9 @@ exports.getcarrersById = async (req, res) => {
 
 exports.createcareer = async (req, res) => {
     try {
-        const { nombre, anios } = req.body;//obtencion de los datos de la carrera 
+        const { nombre, anios } = req.body;
 
-        const newCareer = new careers({
+        const newCareer = new Career({
             nombre,
             anios
         });
@@ -54,7 +53,7 @@ exports.createcareer = async (req, res) => {
 
         res.status(201).json({
             message: "carrera creada exitosamente",
-            carrera: newCareer
+            career: newCareer
         });
 
     }

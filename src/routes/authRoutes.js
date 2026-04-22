@@ -10,12 +10,6 @@ router.post('/register', authController.register); // registrar nuevo usuario
 router.post('/login', authController.login); // iniciar sesion
 
 //Ruta protegida de ejemplo (requiere token)
-router.get('/me', verifyToken, (req, res) => {
-    res.json({
-        message: 'Usuario autenticado',
-        userId: req.userId,
-        email: req.userEmail
-    });
-});
+router.get('/me', verifyToken, authController.getProfile);
 
 module.exports = router; 
